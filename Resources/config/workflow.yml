@@ -2,9 +2,9 @@ workflows:
     acme_demo_workflow_lead_processing:
         label:      'Lead Processing Flow'
         entity:     OroCRM\Bundle\SalesBundle\Entity\Lead
-        start_step: open
-        steps_display_ordered: true
-        entity_attribute: lead
+        start_step: open            # new lead will be created with this step
+        steps_display_ordered: true # all steps will be visible in steps widget
+        entity_attribute: lead      # lead will be accessible by $lead in actions and conditions
 
         steps:
             open:
@@ -32,7 +32,7 @@ workflows:
                 property_path: lead.contact
             b2b_customer:
                 property_path: lead.customer
-            task:
+            task: # temporary attribute to store reopen task
                 label: 'Task for reopen'
                 type:  entity
                 options:
@@ -43,8 +43,11 @@ workflows:
                 label:        'Start progress'
                 step_to:      in_progress
                 transition_definition: start_progress_definition
+                frontend_options:
+                    icon: 'icon-play'
+                    class: 'btn-primary'
                 form_options:
-                    attribute_fields:
+                    attribute_fields: # both first name and last name are required
                         first_name:
                             options:
                                 required: true
@@ -60,6 +63,9 @@ workflows:
                 step_to:      closed
                 transition_definition: close_definition
                 is_unavailable_hidden: false
+                frontend_options:
+                    icon: 'icon-ok'
+                    class: 'btn-success'
                 form_options:
                     attribute_fields:
                         contact: ~
@@ -69,27 +75,29 @@ workflows:
                 step_to:      open
                 transition_definition: reopen_definition
                 is_unavailable_hidden: false
+                frontend_options:
+                    icon: 'icon-repeat'
 
         transition_definitions:
             start_progress_definition: ~
             close_definition:
                 pre_conditions:
-                    @not_empty:
+                    @not_empty: # address is requred for business purposes
                         parameters: $lead.address
                         message: 'Only lead with address can be closed'
                 conditions:
-                    @or:
+                    @or: # we must know who we working with
                         parameters:
                             - @not_empty: $contact
                             - @not_empty: $b2b_customer
                         message: 'Either contact or B2B customer must be specified'
             reopen_definition:
                 pre_conditions:
-                    @not_empty:
+                    @not_empty: # contact is required to create a task
                         parameters: $contact
                         message: 'To reopen a lead it must have a contact'
                 post_actions:
-                    - @create_entity:
+                    - @create_entity: # create task object
                         class: OroCRM\Bundle\TaskBundle\Entity\Task
                         attribute: $task
                         data:
@@ -97,16 +105,16 @@ workflows:
                             owner: $lead.owner
                             reporter: $lead.owner
                             organization: $lead.organization
-                    - @format_string:
+                    - @format_string: # set task subject
                         attribute: $task.subject
                         string: 'Contact %firstName% %lastName% to discuss reopen of %leadName%'
                         arguments:
                             firstName: $contact.firstName
                             lastName: $contact.lastName
                             leadName: $lead.name
-                    - @create_datetime:
+                    - @create_datetime: # set task due data
                         attribute: $task.dueDate
-                    - @find_entity:
+                    - @find_entity: # set task priority to "high"
                         class: OroCRM\Bundle\TaskBundle\Entity\TaskPriority
                         identifier: 'high'
                         attribute: $task.taskPriority
