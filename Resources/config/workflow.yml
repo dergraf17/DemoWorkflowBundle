@@ -54,6 +54,7 @@ workflows:
                 label:        'Close'
                 step_to:      closed
                 transition_definition: close_definition
+                is_unavailable_hidden: false
                 form_options:
                     attribute_fields:
                         contact: ~
@@ -62,8 +63,23 @@ workflows:
                 label:        'Reopen'
                 step_to:      open
                 transition_definition: reopen_definition
+                is_unavailable_hidden: false
 
         transition_definitions:
             start_progress_definition: ~
-            close_definition: ~
-            reopen_definition: ~
+            close_definition:
+                pre_conditions:
+                    @not_empty:
+                        parameters: $lead.address
+                        message: 'Only lead with address can be closed'
+                conditions:
+                    @or:
+                        parameters:
+                            - @not_empty: $contact
+                            - @not_empty: $b2b_customer
+                        message: 'Either contact or B2B customer must be specified'
+            reopen_definition:
+                pre_conditions:
+                    @not_empty:
+                        parameters: $contact
+                        message: 'To reopen a lead it must have a contact'
