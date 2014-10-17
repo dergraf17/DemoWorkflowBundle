@@ -4,6 +4,8 @@ workflows:
         entity:     OroCRM\Bundle\SalesBundle\Entity\Lead
         start_step: open
         steps_display_ordered: true
+        entity_attribute: lead
+
         steps:
             open:
                 label: 'Open'
@@ -21,15 +23,41 @@ workflows:
                 allowed_transitions:
                     - reopen
 
+        attributes:
+            first_name:
+                property_path: lead.firstName
+            last_name:
+                property_path: lead.lastName
+            contact:
+                property_path: lead.contact
+            b2b_customer:
+                property_path: lead.customer
+
         transitions:
             start_progress:
                 label:        'Start progress'
                 step_to:      in_progress
                 transition_definition: start_progress_definition
+                form_options:
+                    attribute_fields:
+                        first_name:
+                            options:
+                                required: true
+                                constraints:
+                                    - NotBlank: ~
+                        last_name:
+                            options:
+                                required: true
+                                constraints:
+                                    - NotBlank: ~
             close:
                 label:        'Close'
                 step_to:      closed
                 transition_definition: close_definition
+                form_options:
+                    attribute_fields:
+                        contact: ~
+                        b2b_customer: ~
             reopen:
                 label:        'Reopen'
                 step_to:      open
