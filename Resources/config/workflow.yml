@@ -32,6 +32,11 @@ workflows:
                 property_path: lead.contact
             b2b_customer:
                 property_path: lead.customer
+            task:
+                label: 'Task for reopen'
+                type:  entity
+                options:
+                    class: OroCRM\Bundle\TaskBundle\Entity\Task
 
         transitions:
             start_progress:
@@ -83,3 +88,25 @@ workflows:
                     @not_empty:
                         parameters: $contact
                         message: 'To reopen a lead it must have a contact'
+                post_actions:
+                    - @create_entity:
+                        class: OroCRM\Bundle\TaskBundle\Entity\Task
+                        attribute: $task
+                        data:
+                            relatedContact: $contact
+                            owner: $lead.owner
+                            reporter: $lead.owner
+                            organization: $lead.organization
+                    - @format_string:
+                        attribute: $task.subject
+                        string: 'Contact %firstName% %lastName% to discuss reopen of %leadName%'
+                        arguments:
+                            firstName: $contact.firstName
+                            lastName: $contact.lastName
+                            leadName: $lead.name
+                    - @create_datetime:
+                        attribute: $task.dueDate
+                    - @find_entity:
+                        class: OroCRM\Bundle\TaskBundle\Entity\TaskPriority
+                        identifier: 'high'
+                        attribute: $task.taskPriority
