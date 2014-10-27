@@ -84,7 +84,7 @@ workflows:
                 pre_conditions:
                     @not_empty: # address is requred for business purposes
                         parameters: $lead.address
-                        message: 'Only lead with address can be closed'
+                        message: 'Only leads with address can be closed'
                 conditions:
                     @or: # we must know who we working with
                         parameters:
